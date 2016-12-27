@@ -2,9 +2,9 @@ import copy
 
 import networkx as nx
 
+from app.ResultParse import ResultParse, Assertion
 from interface.api import Search
-from utils.result import Result, Assertion
-from utils.util import pairwise
+from tools.util import pairwise
 
 
 class Path:
@@ -34,7 +34,7 @@ class Path:
         for relation in self.relations:
             search = Search(rel=relation, limit=1000)
             data = search.search()
-            result = Result(data)
+            result = ResultParse(data)
             edges = result.parse_all_edges()
             for e in edges:
                 graph.add_node(e.start['label'])
@@ -81,7 +81,7 @@ class Path:
         for index, (concept1, concept2) in enumerate(pairwise(self.concepts)):
             search = Search(start=concept1, end=concept2)
             data = search.search()
-            result = Result(data)
+            result = ResultParse(data)
             if result.get_num_found() > 0:
                 edges = result.parse_all_edges()
                 if index == 0:
@@ -112,7 +112,7 @@ class Path:
         for assertion in self.assertions:
             search = Search(start=assertion.start, rel=assertion.relation, end=assertion.end, limit=1000)
             data = search.search()
-            result = Result(data)
+            result = ResultParse(data)
             if result.get_num_found() == 0:
                 if print_where_breaks:
                     print('Assertion breaking the path: [ %s --> (%s) --> %s) ]' % (
@@ -126,3 +126,9 @@ class Path:
         for index, concept in enumerate(self.concepts[1:]):
             print('--> (%s) --> %s' % (self.relations[index], concept), end=',')
         print(']')
+
+
+if __name__ == '__main__':
+    path = Path(['/c/zh/银行', '/c/zh/基金', '/c/zh/有钱'], ['/r/AtLocation', '/r/Causes'])
+
+    print(path.get_all_tuples_of_relations())

@@ -1,13 +1,14 @@
 import ast
+
 from conf.settings import intered_lang
-from utils.debug import print_debug
-from utils.util import is_arg_valid
+from tools.debug import print_debug
+from tools.util import is_arg_valid
 
 # These are the primary keys returned by a query
 SUPPORTED_KEYS = ['@context', '@id', 'edges', 'view', 'related']
 
 
-class Result:
+class ResultParse:
     '''
     This class implements the necessary methods for parsing a query result.
     '''
@@ -69,7 +70,7 @@ class Result:
             e = Edge(edge_str)
 
             # I care only Chinese. you can do as you like
-            if not e.start['term'].startswith(intered_conception) or not e.end['term'].startswith(intered_conception):
+            if not e.start.startswith(intered_conception) or not e.end.startswith(intered_conception):
                 continue
 
             if clean_self_ref:
@@ -87,9 +88,9 @@ class Edge:
 
     def __init__(self, edge_str):
         edge_dict = ast.literal_eval(str(edge_str))
-        self.start = edge_dict['start']
-        self.rel = edge_dict['rel']
-        self.end = edge_dict['end']
+        self.start = edge_dict['start']['term']
+        self.rel = edge_dict['rel']['label']
+        self.end = edge_dict['end']['term']
         self.weight = edge_dict['weight']
         self.surfaceText = edge_dict['surfaceText']
         self.sources = edge_dict['sources']
@@ -101,7 +102,7 @@ class Edge:
         '''
         Prints the lemmas of this edge with start, rel, end lemmas.
         '''
-        print_debug('%s %s %s' % (self.start_lemmas, self.rel, self.end_lemmas))
+        print_debug('%s %s %s' % (self.start, self.rel, self.end))
 
     def print_edge(self):
         '''

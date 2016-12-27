@@ -1,41 +1,23 @@
-# import pynlpir # 中文分词，关键字
 import os
-import re
-from collections import defaultdict
 
 from hanziconv import HanziConv  # 简繁转换
-from jieba import cut
 
+from app.ResultParse import ResultParse
+from app.statistics import analysis
 from interface.api import LookUp, Search, Association
-from utils.result import Result
-from utils.translate import Translate
+from tools.parse_and_filter import parse_sentence
+from tools.translate import Translate
 
 
 class Query:
     def __init__(self, debug=False):
 
-        self.stop_word = ["的", "了", "在", "是", "我", "有", "和", "就",
-                          "不", "人", "都", "一", "一个", "上", "也", "很", "到", "说", "要", "去", "你",
-                          "会", "着", "没有", "看", "好", "自己", "这", "在于", "下",
-                          '三', '四', '五', '六', '七', '八', '九', '十']
+        self.translator = Translate()
+        self.analysis = analysis()
         self.conceptions = []
         self.related_conceptions = list(tuple())
         self.commonsense = set()
         self.debug = debug
-
-    def parse_sentence(self, sentence=''):
-        """
-        :param sentence: type str, input sentence
-        :param sentence: type bool, auto-get relation，havn't implement for now
-        :return:
-        """
-
-        sentence = re.sub("[\s+\d+\.\!\/_,$%^*(+\"\']+|[+——！，。？、~@#￥%……&*（）“”]+", "", sentence)
-        # print("after cut:"+sentence)
-        conceptions = cut(sentence)
-        self.conceptions = [item for item in conceptions if item not in self.stop_word]
-        if self.debug:
-            print(self.conceptions)
 
     @staticmethod
     def base_lookup(conception, Type='c', lang='zh', limit=100, s_to_t=True):
@@ -44,7 +26,7 @@ class Query:
             data = lookup.search_concept(HanziConv.toTraditional(conception))
         else:
             data = lookup.search_concept(conception)
-        r = Result(data)
+        r = ResultParse(data)
 
         if r.get_num_found() > 0:
             return [(edge.surfaceText, edge.start, edge.end, edge.rel)
@@ -52,11 +34,7 @@ class Query:
         return None
 
     def concept_lookup(self):
-        """
 
-        :param concept:
-        :return:
-        """
         print('find only one conception,so get its commonsense at most 10')
 
         # 先中文查找
@@ -64,7 +42,7 @@ class Query:
 
         if not local_commonsense:
             # 如果没有找到，翻译成英文再次查找
-            local_commonsense = Query.base_lookup(Translate.zh_to_en(self.conceptions))
+            local_commonsense = Query.base_lookup(self.translator.zh_to_en(self.conceptions))
         self.commonsense = set(local_commonsense)
 
     @staticmethod
@@ -75,11 +53,11 @@ class Query:
             conception = '/c/' + lang + '/' + conceptions[i]
             s = Search(node=conception)  # can add more key-value
             data = s.search()
-            r = Result(data)
+            r = ResultParse(data)
 
             if r.get_num_found() > 0:
-                tmp = [(edge.surfaceText, edge.start['term'].split('/')[3], edge.end['term'].split('/')[3],
-                        edge.rel['label'])
+                tmp = [(edge.surfaceText, edge.start.split('/')[3], edge.end.split('/')[3],
+                        edge.rel)
                        for edge in r.parse_all_edges()]
 
                 res.extend(tmp)
@@ -114,7 +92,7 @@ class Query:
 
         a = Association(lang=lang, limit=limit)
         raw_data = a.get_similar_concepts_by_term_list(terms)
-        r = Result(raw_data)
+        r = ResultParse(raw_data)
         return r.parse_all_similarity()
 
     def conception_association(self):
@@ -136,46 +114,25 @@ class Query:
 
     def commonsense_query(self, sentences):
 
-        self.parse_sentence(sentences)
+        self.conceptions = parse_sentence(sentences)
 
         self.concept_search(False)
 
         # self.conception_association()
 
         # self.tranlate_to_simple()
-        # print(self.commonsense)
+
         return self.commonsense
 
     def stastics(self):
+
         len_conceptiton = len(self.conceptions)
-        relation = defaultdict(int)
-        pairs = set()
-        text_info = set()
-        f = open('../output/result.txt', 'w', encoding='utf-8')
-        for edge in self.commonsense:
-            relation[edge[3]] += 1
-            pairs.add(edge[1] + '-' + edge[2])
-            text_info.add(edge[0])
-            f.writelines(str(edge) + '\n')
 
-        import operator
-        relation = sorted(relation.items(), key=operator.itemgetter(1))
+        self.analysis.write_commonsense(self.commonsense)
 
-        ff = open('../output/relation.txt', 'w', encoding='utf-8')
-        ff.write(str(relation))
-        # print(pairs)
-        # print(text_info)
+        self.analysis.write_all_relations()
 
-        print('原有概念数目：', len_conceptiton)
-        if len_conceptiton:
-            print("新引出概念对/ 原有的概念：", len(pairs) / len_conceptiton)
-        print("引出的关系数目：", len(relation))
-        # print("相似概念数目比例为：", len(self.related_conceptions)/len_conceptiton)
-
-    def print_conceptions(self):
-        print("常识描述文本---头结点概念----尾节点概念----关系")
-        for item in self.commonsense:
-            print(item)
+        self.analysis.print_comparation(len_conceptiton)
 
 
 if __name__ == "__main__":

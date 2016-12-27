@@ -2,9 +2,9 @@ import sys
 import urllib
 
 from conf import settings
-from utils.debug import print_debug
-from utils.https import make_http_request
-from utils.util import is_arg_valid
+from tools.debug import print_debug
+from tools.https import make_http_request
+from tools.util import is_arg_valid
 
 
 class LookUp:
@@ -22,7 +22,7 @@ class LookUp:
                 print_debug('%s : %s -- THIS ARG IS NOT SUPPORTED!' % (key, value), 'ArgError')
         self.encoded_query_args = urllib.parse.urlencode(query_args)
         self.lang = lang
-        self.type = Type
+        self.Type = Type
 
     def search_concept(self, concept):
         '''
