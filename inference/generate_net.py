@@ -13,7 +13,7 @@ try:
 except:
     raise
 
-matplotlib.rc('font', family='DejaVu Sans')
+
 """
 ##give a start node, at limited step to construct a connected nets with conceptions and relations.
 """
@@ -123,7 +123,7 @@ class netGenerator:
         edge_label = dict()
         for edge in self.edges:
             net.add_edge(edge[0], edge[1], weight=1)
-            edge_label[(edge[0], edge[1])] = edge[2]
+            edge_label[(edge[0], edge[1])] = edge[3]
             if len(edge_label) > 8:
                 break
                 # edge_label.update({(edge[0], edge[1]) : edge[2]})
@@ -137,9 +137,9 @@ class netGenerator:
         nx.draw_networkx_edges(net, pos,
                                width=1.5, alpha=0.5, arrows=True, edge_color='black')
         # labels
-        nx.draw_networkx_labels(net, pos, font_size=20, font_family='sans-serif')
+        nx.draw_networkx_labels(net, pos, font_size=20)
 
-        nx.draw_networkx_edge_labels(net, pos, edge_labels=edge_label, label_pos=0.5)
+        nx.draw_networkx_edge_labels(net, pos, edge_labels=edge_label, label_pos=0.5, font_family='sans-serif')
 
         plt.axis('off')
         plt.savefig(picpath)  # save as png
@@ -148,39 +148,4 @@ class netGenerator:
 if __name__ == '__main__':
     gg = netGenerator()
     gg.run_generate()
-    gg.get_and_save_to_csv()
-    # G=nx.DiGraph()
-    #
-    # a="我"
-    # b="是"
-    # c="你"
-    # d="好"
-    # G.add_edge(a,b,weight=0.5)
-    # G.add_edge(b,c,weight=0.5)
-    # G.add_edge(c,d,weight=0.5)
-    # G.add_edge(a,d,weight=0.5)
-    # G.add_edge(a,c,weight=0.5)
-    # G.add_edge(b,d,weight=0.5)
-    #
-    # pos=nx.spring_layout(G) # positions for all nodes
-    #
-    # # nodes
-    # nx.draw_networkx_nodes(G,pos,node_size=7000, node_color="white")
-    #
-    # # edges
-    # nx.draw_networkx_edges(G,pos,
-    #                        width=6,alpha=0.5,edge_color='black')
-    #
-    #
-    # # labels
-    # nx.draw_networkx_labels(G,pos,font_size=20,font_family='sans-serif')
-    #
-    # nx.draw_networkx_edge_labels(G,pos,
-    #                              {
-    #                                  (a,b):"x", (b,c):"y", (c,d):"w", (a,d):"z", (a,c):"v", (b,d):"r"
-    #                              }
-    #                              )
-    #
-    # plt.axis('off')
-    # plt.savefig("weighted_graph.png") # save as png
-    # plt.show() # display
+    gg.plot_and_save_net()
